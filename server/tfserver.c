@@ -1,6 +1,21 @@
 #include "../sharesource/sstime.h"
 
 
+void SocketInit(void)
+{
+
+}
+
+
+char* FilesInit(size_t fileLen)
+{
+	//1 初始化文件
+	char *pFile = (char *)malloc(fileLen);
+	return pFile;
+}
+
+
+
 int main(int argn,void **argv){
 	time_t start_time = GetTime();
 	
