@@ -6,6 +6,8 @@
 #include <sys/stat.h>//open
 #include <fcntl.h>//open
 #include <unistd.h>//read
+#include <string.h>
+#include <stdlib.h>
 
 typedef struct{
     unsigned char head;

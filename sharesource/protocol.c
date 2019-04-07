@@ -43,18 +43,71 @@ int CloseFile(int fd)
 }
 
 //read :false --> 0; true --> 1
-//sleekSize --> 偏移位置
+//offset --> 偏移位置
 //rBuf --> 读缓存地址
 //rLen --> 读长度,单位:byte
-int ReadFile(int fd,int sleekSize,char *rBuf,int rLen)
+int ReadFile(int fd,int offset,char *rBuf,int rLen)
 {
+    int rByteSize = -1;
+    if(fd < 0)
+    {
+        return 0;
+    }
 
+    if(lseek(fd,offset,SEEK_SET) < 0)
+    {
+        perror("ReadFile lseek false!");
+        return 0;
+    }
+
+    rByteSize = read(fd,rBuf,rLen);
+    if(-1 == rByteSize)
+    {
+        perror("ReadFile read false!");
+        return 0;
+    }
+    return rByteSize;
 }
 
 
-int WriteFile(int fd,int sleekSize,char *wBuf,int wLen)
+int WriteFile(int fd,int offset,char *wBuf,int wLen)
 {
+    int wByteSize = -1;
+    if(fd < 0)
+    {
+        return 0;
+    }
 
+    if(lseek(fd,offset,SEEK_SET) < 0)
+    {
+        perror("WriteFile lseek false!");
+        return 0;
+    }
+    wByteSize = write(fd,wBuf,wLen);
+    if(-1 == wByteSize)
+    {
+        perror("WriteFile read false!");
+        return 0;
+    }
+    return wByteSize;
+}
+
+
+void main(int argn,void **argv)
+{
+    if(argn < 2)
+    {
+        perror("Params Num < 2");
+        exit(0);
+    }
+    int fd = OpenFile(argv[1],O_RDWR);
+
+    WriteFile(fd,0,"1234567890abc",sizeof("1234567890abc"));
+    WriteFile(fd,2,"defghijk",sizeof("defghijk"));
+    char rbuf[10];
+    memset(rbuf,0,10);
+    ReadFile(fd,9,rbuf,10);
+    printf("read data =%s\r\n",rbuf);
 }
 
 
