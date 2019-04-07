@@ -1,6 +1,11 @@
 #ifndef __PROTOCOL_H__
 #define __PROTOCOL_H__
 
+#include <stdio.h>
+#include <sys/types.h>//open
+#include <sys/stat.h>//open
+#include <fcntl.h>//open
+#include <unistd.h>//read
 
 typedef struct{
     unsigned char head;
@@ -18,6 +23,7 @@ typedef struct{
     unsigned char cmd;
 
     //cmd !=0
+    unsigned int fileTotalLen;
     unsigned int fileLocation;
     unsigned int bufLen;
     //buf --> memory address
