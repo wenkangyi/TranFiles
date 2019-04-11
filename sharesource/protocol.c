@@ -54,6 +54,7 @@ int ReadFile(int fd,int offset,char *rBuf,int rLen)
         return 0;
     }
 
+    printf("ReadFile offset=%d\r\n",offset);
     if(lseek(fd,offset,SEEK_SET) < 0)
     {
         perror("ReadFile lseek false!");
@@ -78,11 +79,14 @@ int WriteFile(int fd,int offset,char *wBuf,int wLen)
         return 0;
     }
 
+    printf("WriteFile offset=%d\r\n",offset);
+
     if(lseek(fd,offset,SEEK_SET) < 0)
     {
         perror("WriteFile lseek false!");
         return 0;
     }
+    printf("WriteFile wLen=%d\r\n",wLen);
     wByteSize = write(fd,wBuf,wLen);
     if(-1 == wByteSize)
     {
@@ -102,12 +106,15 @@ void main(int argn,void **argv)
     }
     int fd = OpenFile(argv[1],O_RDWR);
 
-    WriteFile(fd,0,"1234567890abc",sizeof("1234567890abc"));
-    WriteFile(fd,2,"defghijk",sizeof("defghijk"));
+    WriteFile(fd,0,"1234567890abc",sizeof("1234567890abc")-1);
+    WriteFile(fd,2,"defghijk",sizeof("defghijk")-1);
     char rbuf[10];
     memset(rbuf,0,10);
-    ReadFile(fd,9,rbuf,10);
-    printf("read data =%s\r\n",rbuf);
+    int ret = ReadFile(fd,9,rbuf,2);
+    CloseFile(fd);
+    printf("ret =%d \r\n",ret);
+    for(int index=0;index<ret;index++)
+        printf("rbuf[%d] =%c\r\n",index,rbuf[index]);
 }
 
 
