@@ -156,7 +156,7 @@ int SendStartFrame(int sockfd,TranFileStruct *tfs)
     return ret;
 }
 
-char* SendStartFrameAck(int sockfd,char *recBuf,unsigned int *fileCRCValue)
+int SendStartFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs)
 {
     StartFrame *sf = (StartFrame*)recBuf;
     FrameAck fa;
@@ -166,7 +166,7 @@ char* SendStartFrameAck(int sockfd,char *recBuf,unsigned int *fileCRCValue)
     fa.format = sf->format;
     fa.cmd = sf->cmd;
     fileTotalLen = sf->fileTotalLen;
-    *fileCRCValue = sf->fileCRCValue;
+    tfs->fileCRCValue = sf->fileCRCValue;
     memcpy(fa.tail,sf->tail,4);
 
     //create file
@@ -180,14 +180,16 @@ char* SendStartFrameAck(int sockfd,char *recBuf,unsigned int *fileCRCValue)
         Munmap2Memory(fileMap,fileTotalLen);
         CloseFile(fd);
         perror("SendStartFrameAck mmap file error!");
+        return -1;
     }
     memset(fileMap,0,fileTotalLen);
     //Munmap2Memory(fileMap,fileTotalLen);
     //CloseFile(fd);
-    
+    tfs->fileMap = fileMap;
     fa.exeStatus = 1;
-    send(sockfd,(char*)&fa,sizeof(fa),0);
-    return fileMap;
+    int ret = send(sockfd,(char*)&fa,sizeof(fa),0);
+    if(-1 == ret) perror("SendStartFrameAck send error!");
+    return ret;
 }
 
 int SendEndFrame(int sockfd)

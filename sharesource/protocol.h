@@ -13,7 +13,11 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#define PAGE_SIZE 4096 
+#define SERV_PORT   8080
+#define SOCKET_MAX_NUM  1000
+
+
+#define PAGE_SIZE (4096)
 #define PRO_VER (0x00)
 
 #define FORMAT_HEX      (0x00)
@@ -165,7 +169,7 @@ extern int WriteFile(int fd,int offset,char *wBuf,int wLen);
 
 //protocol
 extern int SendStartFrame(int sockfd,TranFileStruct *tfs);
-extern char* SendStartFrameAck(int sockfd,char *recBuf,unsigned int *fileCRCValue);
+extern int SendStartFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs);
 extern int SendEndFrame(int sockfd);
 extern int SendEndFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs);
 extern int SendData(int sockfd,TranFileStruct *tfs);
