@@ -127,6 +127,81 @@ int WriteFile(int fd,int offset,char *wBuf,int wLen)
     return wByteSize;
 }
 
+
+int SendStartFrame(int sockfd,TranFileStruct *tfs)
+{
+    StartFrame sf ;
+
+    for(int i=0;i<sizeof(sf.head);i++) sf.head[i] = 0xFE;
+    sf.ver = PRO_VER;
+    sf.format = FORMAT_HEX;
+    sf.cmd = START_FRAME_CMD;
+    sf.fileTotalLen = tfs->fileTotalLen;
+    sf.fileCRCValue = tfs->fileCRCValue;
+
+    for(int i=0;i<sizeof(sf.tail);i++) sf.tail[i] = 0xEF;
+
+    printf("send data lenght %d\r\n",sizeof(sf));
+
+    int ret = send(sockfd, &sf, sizeof(sf), 0);
+    if(-1 == ret ) perror("SendData send error!");
+    return ret;
+}
+
+int SendEndFrame(int sockfd)
+{
+    EndFrame ef;
+    for(int i=0;i<sizeof(ef.head);i++) ef.head[i] = 0xFE;
+    ef.ver = PRO_VER;
+    ef.format = FORMAT_HEX;
+    ef.cmd = END_FRAME_CMD;
+
+    for(int i=0;i<sizeof(ef.tail);i++) ef.tail[i] = 0xEF;
+
+    printf("send data lenght %d\r\n",sizeof(ef));
+
+    int ret = send(sockfd, &ef, sizeof(ef), 0);
+    if(-1 == ret ) perror("SendData send error!");
+    return ret;
+}
+
+//send data
+//sockfd
+//tfs --> TranFileStruct *
+int SendData(int sockfd,TranFileStruct *tfs)
+{
+    //tfs->fileMap
+    TranPro tp;
+    for(int i=0;i<sizeof(tp.head);i++) tp.head[i] = 0xFE;
+    tp.ver = PRO_VER;
+    tp.format = FORMAT_HEX;
+    tp.cmd = DATA_FRAME_CMD;
+    tp.fileTotalLen = tfs->fileTotalLen;
+    tp.fileLocation = tfs->currPoint;
+    
+    if((tfs->currPoint + tfs->maxTranSize) > tfs->endPoint)
+    {
+        tp.bufLen = tfs->endPoint - tfs->currPoint;
+    }
+    else{
+        tp.bufLen = tfs->maxTranSize;
+    }
+
+    memset(tp.buf,0,MAX_TRAN_DATA_SIZE);
+    memcpy(tp.buf,&tfs->fileMap[tfs->currPoint], tp.bufLen);
+
+    for(int i=0;i<sizeof(tp.tail);i++) tp.tail[i] = 0xEF;
+
+    printf("send data lenght %d\r\n",sizeof(tp));
+
+    int ret = send(sockfd, &tp, sizeof(tp), 0);
+    if(-1 == ret ) perror("SendData send error!");
+    return ret;
+}
+
+
+
+
 //function testing
 void main(int argn,void **argv)
 {
