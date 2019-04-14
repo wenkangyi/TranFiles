@@ -1,0 +1,18 @@
+
+src=$(wildcard ./*.c)
+obj=$(patsubst ./%.c, ./%.o, $(src))
+
+CC=gcc
+
+target=pro
+
+$(target):$(obj)
+	$(CC) $(obj) -o $(target)
+
+
+.PHONY:clean
+clean:
+	rm $(obj) $(target) -f
+
+gcctoO:
+	$(CC) $(src) -c

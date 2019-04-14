@@ -104,10 +104,11 @@ void main(int argn,void **argv)
         perror("Params Num < 2");
         exit(0);
     }
-    int fd = OpenFile(argv[1],O_RDWR);
+    int fd = OpenFile(argv[1],O_CREAT | O_RDWR);
 
-    WriteFile(fd,0,"1234567890abc",sizeof("1234567890abc")-1);
-    WriteFile(fd,2,"defghijk",sizeof("defghijk")-1);
+    //sizeof("1234567890abc") 
+    WriteFile(fd,0,"1234567890abc",sizeof("1234567890abc"));
+    WriteFile(fd,2,"defghijk",sizeof("defghijk"));
     char rbuf[10];
     memset(rbuf,0,10);
     int ret = ReadFile(fd,9,rbuf,2);
