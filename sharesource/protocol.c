@@ -138,14 +138,47 @@ int SendStartFrame(int sockfd,TranFileStruct *tfs)
     sf.cmd = START_FRAME_CMD;
     sf.fileTotalLen = tfs->fileTotalLen;
     sf.fileCRCValue = tfs->fileCRCValue;
-
+    memcpy(sf.fileName,tfs->fileName,FILE_NAME_MAX_LEN);
     for(int i=0;i<sizeof(sf.tail);i++) sf.tail[i] = 0xEF;
 
     printf("send data lenght %d\r\n",sizeof(sf));
 
-    int ret = send(sockfd, &sf, sizeof(sf), 0);
+    int ret = send(sockfd, (char *)&sf, sizeof(sf), 0);
     if(-1 == ret ) perror("SendData send error!");
     return ret;
+}
+
+int SendStartFrameAck(int sockfd,char *recBuf,unsigned int *fileCRCValue)
+{
+    StartFrame *sf = (StartFrame*)recBuf;
+    FrameAck fa;
+    int fileTotalLen = 0;
+    memcpy(fa.head,sf->head,4);
+    fa.ver = sf->ver;
+    fa.format = sf->format;
+    fa.cmd = sf->cmd;
+    fileTotalLen = sf->fileTotalLen;
+    *fileCRCValue = sf->fileCRCValue;
+    memcpy(fa.tail,sf->tail,4);
+
+    //create file
+    int fd = OpenFile(sf->fileName,O_CREAT | O_RDWR);
+    if(-1 == fd) perror("SendStartFrameAck openfile error!");
+    char *fileMap = MmapFile2Memory(fd,fileTotalLen);
+    if(-1 == fileMap)
+    {
+        fa.exeStatus = 0;
+        send(sockfd,(char*)&fa,sizeof(fa),0);
+        Munmap2Memory(fileMap,fileTotalLen);
+        CloseFile(fd);
+        perror("SendStartFrameAck mmap file error!");
+    }
+    memset(fileMap,0,fileTotalLen);
+    Munmap2Memory(fileMap,fileTotalLen);
+    CloseFile(fd);
+    
+    fa.exeStatus = 1;
+    send(sockfd,(char*)&fa,sizeof(fa),0);
 }
 
 int SendEndFrame(int sockfd)
@@ -160,7 +193,7 @@ int SendEndFrame(int sockfd)
 
     printf("send data lenght %d\r\n",sizeof(ef));
 
-    int ret = send(sockfd, &ef, sizeof(ef), 0);
+    int ret = send(sockfd, (char *)&ef, sizeof(ef), 0);
     if(-1 == ret ) perror("SendData send error!");
     return ret;
 }
@@ -194,7 +227,7 @@ int SendData(int sockfd,TranFileStruct *tfs)
 
     printf("send data lenght %d\r\n",sizeof(tp));
 
-    int ret = send(sockfd, &tp, sizeof(tp), 0);
+    int ret = send(sockfd, (char *)&tp, sizeof(tp), 0);
     if(-1 == ret ) perror("SendData send error!");
     return ret;
 }

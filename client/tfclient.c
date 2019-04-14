@@ -1,4 +1,4 @@
-#include "../sharesource/Sstime.h" //在这里已经指定了路径
+#include "../sharesource/sstime.h" //在这里已经指定了路径
 #include <inttypes.h>
 
 

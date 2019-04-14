@@ -27,6 +27,9 @@
 
 #define MAX_TRAN_DATA_SIZE  1024
 
+#define FILE_NAME_MAX_LEN   100
+
+#pragma pack (1)
 //start frame
 typedef struct{
     //0xFE 0xFE 0xFE 0xFE
@@ -48,6 +51,8 @@ typedef struct{
     unsigned int fileTotalLen;
     //32bit CRC
     unsigned int fileCRCValue;
+    //fileName
+    char fileName[FILE_NAME_MAX_LEN];
     //==========================
     //0xEF 0xEF 0xEF 0xEF
     unsigned char tail[4];
@@ -135,6 +140,7 @@ typedef struct{
 typedef struct 
 {
     char *fileMap;
+    char fileName[FILE_NAME_MAX_LEN];
     int fileTotalLen;
     unsigned int fileCRCValue;
     int startPoint;

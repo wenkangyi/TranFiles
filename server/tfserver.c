@@ -1,7 +1,7 @@
 #include "../sharesource/sstime.h"
 
-
-void SocketInit(void)
+//return sockfd
+int SocketInit(void)
 {
 
 }
