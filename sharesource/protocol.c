@@ -6,6 +6,14 @@ char *filePath = NULL;
 char *fileMap = NULL;
 int fileLen = 0;
 
+//add
+unsigned int CalcCRCValue(char *pbuf,int len)
+{
+    unsigned int crcValue = 0;
+    for(int i=0;i<len;i++) crcValue += pbuf[i];
+    return crcValue;
+}
+
 //false --> 0; true --> 1
 int SetFilePath(char *fPath,int fPathLen)
 {
@@ -148,7 +156,7 @@ int SendStartFrame(int sockfd,TranFileStruct *tfs)
     return ret;
 }
 
-int SendStartFrameAck(int sockfd,char *recBuf,unsigned int *fileCRCValue)
+char* SendStartFrameAck(int sockfd,char *recBuf,unsigned int *fileCRCValue)
 {
     StartFrame *sf = (StartFrame*)recBuf;
     FrameAck fa;
@@ -174,11 +182,12 @@ int SendStartFrameAck(int sockfd,char *recBuf,unsigned int *fileCRCValue)
         perror("SendStartFrameAck mmap file error!");
     }
     memset(fileMap,0,fileTotalLen);
-    Munmap2Memory(fileMap,fileTotalLen);
-    CloseFile(fd);
+    //Munmap2Memory(fileMap,fileTotalLen);
+    //CloseFile(fd);
     
     fa.exeStatus = 1;
     send(sockfd,(char*)&fa,sizeof(fa),0);
+    return fileMap;
 }
 
 int SendEndFrame(int sockfd)
@@ -198,6 +207,29 @@ int SendEndFrame(int sockfd)
     return ret;
 }
 
+int SendEndFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs)
+{
+    EndFrame *ef = (EndFrame*)recBuf;
+    FrameAck fa;
+    int fileTotalLen = 0;
+    memcpy(fa.head,ef->head,4);
+    fa.ver = ef->ver;
+    fa.format = ef->format;
+    fa.cmd = ef->cmd;
+    memcpy(fa.tail,ef->tail,4);
+    
+    unsigned int crcValue = CalcCRCValue(tfs->fileMap,tfs->fileTotalLen);
+    if(crcValue == tfs->fileCRCValue){
+        fa.exeStatus = 1;
+    }else{
+        fa.exeStatus = 0;
+    }
+    
+    Munmap2Memory(tfs->fileMap,tfs->fileTotalLen);
+    CloseFile(tfs->fd);
+    send(sockfd,(char*)&fa,sizeof(fa),0);
+}
+
 //send data
 //sockfd
 //tfs --> TranFileStruct *
@@ -210,7 +242,7 @@ int SendData(int sockfd,TranFileStruct *tfs)
     tp.format = FORMAT_HEX;
     tp.cmd = DATA_FRAME_CMD;
     tp.fileTotalLen = tfs->fileTotalLen;
-    tp.fileLocation = tfs->currPoint;
+    tp.currPoint = tfs->currPoint;
     
     if((tfs->currPoint + tfs->maxTranSize) > tfs->endPoint)
     {
@@ -219,6 +251,7 @@ int SendData(int sockfd,TranFileStruct *tfs)
     else{
         tp.bufLen = tfs->maxTranSize;
     }
+    tfs->currPoint += tp.bufLen;
 
     memset(tp.buf,0,MAX_TRAN_DATA_SIZE);
     memcpy(tp.buf,&tfs->fileMap[tfs->currPoint], tp.bufLen);
@@ -232,50 +265,65 @@ int SendData(int sockfd,TranFileStruct *tfs)
     return ret;
 }
 
-
+int SendDataFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs)
+{
+    TranPro *ef = (TranPro*)recBuf;
+    FrameAck fa;
+    int fileTotalLen = 0;
+    memcpy(fa.head,ef->head,4);
+    fa.ver = ef->ver;
+    fa.format = ef->format;
+    fa.cmd = ef->cmd;
+    memcpy(fa.tail,ef->tail,4);
+    
+    memcpy(&tfs->fileMap[tfs->currPoint],ef->buf,ef->bufLen);
+    
+    int ret = send(sockfd,(char*)&fa,sizeof(fa),0);
+    return ret;
+}
 
 
 //function testing
-void main(int argn,void **argv)
-{
-    if(argn < 2)
-    {
-        perror("Params Num < 2");
-        exit(0);
-    }
-    int fd = OpenFile(argv[1],O_CREAT | O_RDWR);
-    if(-1 == fd) perror("open file error!");
+// void main(int argn,void **argv)
+// {
+//     if(argn < 2)
+//     {
+//         perror("Params Num < 2");
+//         exit(0);
+//     }
+//     int fd = OpenFile(argv[1],O_CREAT | O_RDWR);
+//     if(-1 == fd) perror("open file error!");
     
-    //sizeof("1234567890abc") must sub -1
-    //WriteFile(fd,0,"1234567890abc",sizeof("1234567890abc")-1);
-    //WriteFile(fd,2,"defghijk",sizeof("defghijk")-1);
+//     //sizeof("1234567890abc") must sub -1
+//     //WriteFile(fd,0,"1234567890abc",sizeof("1234567890abc")-1);
+//     //WriteFile(fd,2,"defghijk",sizeof("defghijk")-1);
     
-    // char wbuf[10] ;
-    // memset(wbuf,0,10);
-    // for(int i=0;i<sizeof(wbuf);i++) wbuf[i] = '0' + i;
-    // WriteFile(fd,0,wbuf,sizeof(wbuf));
+//     // char wbuf[10] ;
+//     // memset(wbuf,0,10);
+//     // for(int i=0;i<sizeof(wbuf);i++) wbuf[i] = '0' + i;
+//     // WriteFile(fd,0,wbuf,sizeof(wbuf));
     
-    // for(int i=0;i<sizeof(wbuf);i++) wbuf[i] = 'a' + i;
-    // WriteFile(fd,2,wbuf,sizeof(wbuf));
+//     // for(int i=0;i<sizeof(wbuf);i++) wbuf[i] = 'a' + i;
+//     // WriteFile(fd,2,wbuf,sizeof(wbuf));
     
-    // char rbuf[10];
-    // memset(rbuf,0,10);
-    // int ret = ReadFile(fd,9,rbuf,2);
+//     // char rbuf[10];
+//     // memset(rbuf,0,10);
+//     // int ret = ReadFile(fd,9,rbuf,2);
 
-    fileLen = GetFileSize(fd);
-    printf("fileLen=%d\r\n",fileLen);
-    fileMap = MmapFile2Memory(fd,fileLen);
-    if((char *)-1 == fileMap) perror("mmap error!");
+//     fileLen = GetFileSize(fd);
+//     printf("fileLen=%d\r\n",fileLen);
+//     fileMap = MmapFile2Memory(fd,fileLen);
+//     if((char *)-1 == fileMap) perror("mmap error!");
 
-    //for(int index=0;index<fileLen;index++) 
-    printf("file = %s\r\n",fileMap);
+//     //for(int index=0;index<fileLen;index++) 
+//     printf("file = %s\r\n",fileMap);
 
-    Munmap2Memory(fileMap,fileLen);
-    CloseFile(fd);
-    // printf("ret =%d \r\n",ret);
-    // for(int index=0;index<ret;index++)
-    //     printf("rbuf[%d] =%c\r\n",index,rbuf[index]);
-}
+//     Munmap2Memory(fileMap,fileLen);
+//     CloseFile(fd);
+//     // printf("ret =%d \r\n",ret);
+//     // for(int index=0;index<ret;index++)
+//     //     printf("rbuf[%d] =%c\r\n",index,rbuf[index]);
+// }
 
 
 

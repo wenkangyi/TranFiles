@@ -103,7 +103,7 @@ typedef struct{
 
     //cmd !=0
     unsigned int fileTotalLen;
-    unsigned int fileLocation;
+    unsigned int currPoint;
     unsigned int bufLen;
     //buf --> memory address
     char buf[MAX_TRAN_DATA_SIZE];
@@ -139,6 +139,7 @@ typedef struct{
 //============================================
 typedef struct 
 {
+    int fd;
     char *fileMap;
     char fileName[FILE_NAME_MAX_LEN];
     int fileTotalLen;
@@ -148,5 +149,26 @@ typedef struct
     int currPoint;
     int const maxTranSize;
 }TranFileStruct;
+
+
+//================= function declaration ===============
+//file
+extern int SetFilePath(char *fPath,int fPathLen);
+extern int ClearFilePath();
+extern int OpenFile(const char *fPath,int flag);
+extern int GetFileSize(int fd);
+extern char* MmapFile2Memory(int fd,int fileLen);
+extern int Munmap2Memory(char *fpStartAddr,int fileLen);
+extern int CloseFile(int fd);
+extern int ReadFile(int fd,int offset,char *rBuf,int rLen);
+extern int WriteFile(int fd,int offset,char *wBuf,int wLen);
+
+//protocol
+extern int SendStartFrame(int sockfd,TranFileStruct *tfs);
+extern char* SendStartFrameAck(int sockfd,char *recBuf,unsigned int *fileCRCValue);
+extern int SendEndFrame(int sockfd);
+extern int SendEndFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs);
+extern int SendData(int sockfd,TranFileStruct *tfs);
+extern int SendDataFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs);
 
 #endif

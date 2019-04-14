@@ -8,22 +8,20 @@ void CalcTime(time_t start_time,time_t end_time)
 	struct tm *end_locp = NULL;
     struct tm start_loc;
 	struct tm end_loc;
-	char filename[50];
-	int i = 0;
 	
 	//t = time(NULL);
-	locp = localtime(&t);
-	if (locp != NULL)
-	{
-		loc = *locp;
-		printf ("%d:%d:%d %s\n",loc.tm_hour,loc.tm_min,loc.tm_sec,s);
+	// locp = localtime(&t);
+	// if (locp != NULL)
+	// {
+	// 	loc = *locp;
+	// 	printf ("%d:%d:%d %s\n",loc.tm_hour,loc.tm_min,loc.tm_sec,s);
 		
-	}	
+	// }	
 }
 
 time_t GetTime()
 {
-	return time(null);
+	return time(NULL);
 }
 
 
