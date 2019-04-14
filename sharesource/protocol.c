@@ -2,6 +2,9 @@
 
 
 char *filePath = NULL;
+//file memory address
+char *fileMap = NULL;
+int fileLen = 0;
 
 //false --> 0; true --> 1
 int SetFilePath(char *fPath,int fPathLen)
@@ -29,6 +32,34 @@ int OpenFile(const char *fPath,int flag)
         perror("open file false;");
     }
     return fd;
+}
+
+int GetFileSize(int fd)
+{
+    struct stat statbuf;
+    if(-1 == fstat(fd,&statbuf))
+    {
+        perror("GetFileSize function fstat false!");
+    }
+    return statbuf.st_size;
+}
+
+//loading file
+//fd --> file descriptor
+//fileLen --> file length
+//On success,return memory address;false return -1
+char* MmapFile2Memory(int fd,int fileLen)
+{
+    return (char *)mmap(0, fileLen, PROT_READ | PROT_WRITE, MAP_SHARED,fd, 0);
+}
+
+//uninstall file
+//fpStartAddr --> file to memory start address 
+//fileLen --> file lenght
+//return:On success,return 0;false return -1
+int Munmap2Memory(char *fpStartAddr,int fileLen)
+{
+    return munmap(fpStartAddr,fileLen);
 }
 
 //false --> 0; true --> 1
@@ -96,7 +127,7 @@ int WriteFile(int fd,int offset,char *wBuf,int wLen)
     return wByteSize;
 }
 
-
+//function testing
 void main(int argn,void **argv)
 {
     if(argn < 2)
@@ -105,17 +136,37 @@ void main(int argn,void **argv)
         exit(0);
     }
     int fd = OpenFile(argv[1],O_CREAT | O_RDWR);
+    if(-1 == fd) perror("open file error!");
+    
+    //sizeof("1234567890abc") must sub -1
+    //WriteFile(fd,0,"1234567890abc",sizeof("1234567890abc")-1);
+    //WriteFile(fd,2,"defghijk",sizeof("defghijk")-1);
+    
+    // char wbuf[10] ;
+    // memset(wbuf,0,10);
+    // for(int i=0;i<sizeof(wbuf);i++) wbuf[i] = '0' + i;
+    // WriteFile(fd,0,wbuf,sizeof(wbuf));
+    
+    // for(int i=0;i<sizeof(wbuf);i++) wbuf[i] = 'a' + i;
+    // WriteFile(fd,2,wbuf,sizeof(wbuf));
+    
+    // char rbuf[10];
+    // memset(rbuf,0,10);
+    // int ret = ReadFile(fd,9,rbuf,2);
 
-    //sizeof("1234567890abc") 
-    WriteFile(fd,0,"1234567890abc",sizeof("1234567890abc"));
-    WriteFile(fd,2,"defghijk",sizeof("defghijk"));
-    char rbuf[10];
-    memset(rbuf,0,10);
-    int ret = ReadFile(fd,9,rbuf,2);
+    fileLen = GetFileSize(fd);
+    printf("fileLen=%d\r\n",fileLen);
+    fileMap = MmapFile2Memory(fd,fileLen);
+    if((char *)-1 == fileMap) perror("mmap error!");
+
+    //for(int index=0;index<fileLen;index++) 
+    printf("file = %s\r\n",fileMap);
+
+    Munmap2Memory(fileMap,fileLen);
     CloseFile(fd);
-    printf("ret =%d \r\n",ret);
-    for(int index=0;index<ret;index++)
-        printf("rbuf[%d] =%c\r\n",index,rbuf[index]);
+    // printf("ret =%d \r\n",ret);
+    // for(int index=0;index<ret;index++)
+    //     printf("rbuf[%d] =%c\r\n",index,rbuf[index]);
 }
 
 

@@ -8,6 +8,9 @@
 #include <unistd.h>//read
 #include <string.h>
 #include <stdlib.h>
+#include <sys/mman.h>//mmap
+
+#define PAGE_SIZE 4096 
 
 typedef struct{
     unsigned char head;
