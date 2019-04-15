@@ -59,6 +59,9 @@ int main(int argn,void **argv){
 			close(clientSockfd);
 			break;
 		}
+
+		printf("rec data --> %s\n",recBuf);
+		
 		switch (recBuf[6])
 		{
 			case START_FRAME_CMD:{
