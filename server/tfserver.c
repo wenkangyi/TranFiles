@@ -46,7 +46,7 @@ char* FilesInit(size_t fileLen)
 int main(int argn,void **argv){
 	int serverSockfd = 0;
 	int clientSockfd = 0;
-	int recBuf[10240];
+	char recBuf[10240];
 	TranFileStruct tfs={0,NULL,"",0,0,0,0,0,FILE_NAME_MAX_LEN};
 	time_t start_time = GetTime();
 	
@@ -75,6 +75,7 @@ int main(int argn,void **argv){
 			}break;
 
 			default:
+				send(clientSockfd,"he,client!\n",sizeof("he,client!\n"),0);
 				break;
 		}
 		memset(recBuf,0,10240);

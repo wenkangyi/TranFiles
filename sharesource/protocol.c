@@ -149,7 +149,7 @@ int SendStartFrame(int sockfd,TranFileStruct *tfs)
     memcpy(sf.fileName,tfs->fileName,FILE_NAME_MAX_LEN);
     for(int i=0;i<sizeof(sf.tail);i++) sf.tail[i] = 0xEF;
 
-    printf("send data lenght %d\r\n",sizeof(sf));
+    printf("send data lenght %ld\r\n",sizeof(sf));
 
     int ret = send(sockfd, (char *)&sf, sizeof(sf), 0);
     if(-1 == ret ) perror("SendData send error!");
@@ -173,7 +173,7 @@ int SendStartFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs)
     int fd = OpenFile(sf->fileName,O_CREAT | O_RDWR);
     if(-1 == fd) perror("SendStartFrameAck openfile error!");
     char *fileMap = MmapFile2Memory(fd,fileTotalLen);
-    if(-1 == fileMap)
+    if((char*)-1 == fileMap)
     {
         fa.exeStatus = 0;
         send(sockfd,(char*)&fa,sizeof(fa),0);
@@ -202,7 +202,7 @@ int SendEndFrame(int sockfd)
 
     for(int i=0;i<sizeof(ef.tail);i++) ef.tail[i] = 0xEF;
 
-    printf("send data lenght %d\r\n",sizeof(ef));
+    printf("send data lenght %ld\r\n",sizeof(ef));
 
     int ret = send(sockfd, (char *)&ef, sizeof(ef), 0);
     if(-1 == ret ) perror("SendData send error!");
@@ -229,7 +229,8 @@ int SendEndFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs)
     
     Munmap2Memory(tfs->fileMap,tfs->fileTotalLen);
     CloseFile(tfs->fd);
-    send(sockfd,(char*)&fa,sizeof(fa),0);
+    int ret = send(sockfd,(char*)&fa,sizeof(fa),0);
+    return ret;
 }
 
 //send data
@@ -260,7 +261,7 @@ int SendData(int sockfd,TranFileStruct *tfs)
 
     for(int i=0;i<sizeof(tp.tail);i++) tp.tail[i] = 0xEF;
 
-    printf("send data lenght %d\r\n",sizeof(tp));
+    printf("send data lenght %ld\r\n",sizeof(tp));
 
     int ret = send(sockfd, (char *)&tp, sizeof(tp), 0);
     if(-1 == ret ) perror("SendData send error!");

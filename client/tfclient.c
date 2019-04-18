@@ -41,21 +41,26 @@ int Connection(char *ip)
 
 int main(int argn,void **argv){
 	
+	char recbuf[10240];
+	int recLen = 0;
 	if(argn < 3)
 	{
-		printf("input:./appname filename serverIP");
+		printf("input:./appname serverIP filename");
 	}
 	
 	TranFileStruct tfs={0,NULL,"",0,0,0,0,0,FILE_NAME_MAX_LEN};
-
+	memcpy(tfs.fileName,argv[2],strlen(argv[2]));// tfs.fileName
 	int clientSockfd = Connection(argv[1]);
 
 	send(clientSockfd,"hello,server!",sizeof("hello,server!"),0);
-	close(clientSockfd);
+	recLen = recv(clientSockfd,recbuf,sizeof(recbuf),0);
+	printf("recv data -->:%s\n",recbuf);
+	
 	time_t start_time = GetTime();
 	
+	SendStartFrame(clientSockfd,&tfs);
 
-
+	close(clientSockfd);
 	time_t end_time = GetTime();
 	CalcTime(start_time,end_time);
 	
