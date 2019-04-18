@@ -54,11 +54,12 @@ int GetFileSize(int fd)
 
 //loading file
 //fd --> file descriptor
+//flag --> PROT_READ | PROT_WRITE
 //fileLen --> file length
 //On success,return memory address;false return -1
-char* MmapFile2Memory(int fd,int fileLen)
+char* MmapFile2Memory(int fd,int fileLen,int flag)
 {
-    return (char *)mmap(0, fileLen, PROT_READ | PROT_WRITE, MAP_SHARED,fd, 0);
+    return (char *)mmap(0, fileLen, flag, MAP_SHARED,fd, 0);
 }
 
 //uninstall file
@@ -285,6 +286,15 @@ int SendDataFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs)
     return ret;
 }
 
+//1 success,0 false
+int FrameAckParsing(int sockfd)
+{
+    char recBuf[10240];
+    int recLen = recv(sockfd,recBuf,sizeof(recBuf),0);
+    if(recLen<=0) perror("FrameAckParsing\n");
+    FrameAck *pfa = (FrameAck*)recBuf;
+    return pfa->exeStatus;        
+}
 
 //function testing
 // void main(int argn,void **argv)

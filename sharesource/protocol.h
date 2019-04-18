@@ -157,11 +157,12 @@ typedef struct
 
 //================= function declaration ===============
 //file
+extern unsigned int CalcCRCValue(char *pbuf,int len);
 extern int SetFilePath(char *fPath,int fPathLen);
 extern int ClearFilePath();
 extern int OpenFile(const char *fPath,int flag);
 extern int GetFileSize(int fd);
-extern char* MmapFile2Memory(int fd,int fileLen);
+extern char* MmapFile2Memory(int fd,int fileLen,int flag);
 extern int Munmap2Memory(char *fpStartAddr,int fileLen);
 extern int CloseFile(int fd);
 extern int ReadFile(int fd,int offset,char *rBuf,int rLen);
@@ -174,5 +175,6 @@ extern int SendEndFrame(int sockfd);
 extern int SendEndFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs);
 extern int SendData(int sockfd,TranFileStruct *tfs);
 extern int SendDataFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs);
+extern int FrameAckParsing(int sockfd);
 
 #endif

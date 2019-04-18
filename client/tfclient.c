@@ -35,7 +35,16 @@ int Connection(char *ip)
 	return clientSocket;
 }
 
-
+void FileInit(TranFileStruct *tfs,char *fileName){
+	memcpy(tfs->fileName,fileName,strlen(fileName));// tfs.fileName
+	tfs->fd = OpenFile(tfs->fileName,O_RDONLY);
+	tfs->fileTotalLen = GetFileSize(tfs->fd);
+	tfs->startPoint = 0;
+	tfs->currPoint = 0;
+	tfs->endPoint = tfs->fileTotalLen;
+	tfs->fileMap = MmapFile2Memory(tfs->fd,tfs->fileTotalLen,PROT_READ);
+	tfs->fileCRCValue = CalcCRCValue(tfs->fileMap,tfs->fileTotalLen);
+}
 
 //----------  Socket Control End ---------------
 
@@ -43,24 +52,34 @@ int main(int argn,void **argv){
 	
 	char recbuf[10240];
 	int recLen = 0;
+	TranFileStruct tfs={0,NULL,"",0,0,0,0,0,FILE_NAME_MAX_LEN};
+	int exeStatus = 0;
+
 	if(argn < 3)
 	{
 		printf("input:./appname serverIP filename");
 	}
-	
-	TranFileStruct tfs={0,NULL,"",0,0,0,0,0,FILE_NAME_MAX_LEN};
-	memcpy(tfs.fileName,argv[2],strlen(argv[2]));// tfs.fileName
 	int clientSockfd = Connection(argv[1]);
+	
+	FileInit(&tfs,argv[2]);
 
-	send(clientSockfd,"hello,server!",sizeof("hello,server!"),0);
-	recLen = recv(clientSockfd,recbuf,sizeof(recbuf),0);
+	//send(clientSockfd,"hello,server!",sizeof("hello,server!"),0);
+	//recLen = recv(clientSockfd,recbuf,sizeof(recbuf),0);
 	printf("recv data -->:%s\n",recbuf);
 	
 	time_t start_time = GetTime();
 	
 	SendStartFrame(clientSockfd,&tfs);
+	while(( (exeStatus = FrameAckParsing(clientSockfd)) == 0) && (tfs.currPoint < tfs.endPoint)){
+		SendData(clientSockfd,&tfs);
+	}
+	if(1 == exeStatus){
+		SendEndFrame(clientSockfd);
+		exeStatus = FrameAckParsing(clientSockfd);
+	}
 
 	close(clientSockfd);
+	if(0 == exeStatus) perror("exeStatus = 0");
 	time_t end_time = GetTime();
 	CalcTime(start_time,end_time);
 	
