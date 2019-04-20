@@ -57,7 +57,8 @@ int main(int argn,void **argv){
 
 	if(argn < 3)
 	{
-		printf("input:./appname serverIP filename");
+		printf("input:./appname serverIP filename\n");
+		return 0;
 	}
 	int clientSockfd = Connection(argv[1]);
 	

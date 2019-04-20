@@ -140,7 +140,7 @@ int WriteFile(int fd,int offset,char *wBuf,int wLen)
 int SendStartFrame(int sockfd,TranFileStruct *tfs)
 {
     StartFrame sf ;
-
+    printf("-->SendStartFrame\n");
     for(int i=0;i<sizeof(sf.head);i++) sf.head[i] = 0xFE;
     sf.ver = PRO_VER;
     sf.format = FORMAT_HEX;
@@ -161,6 +161,7 @@ int SendStartFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs)
 {
     StartFrame *sf = (StartFrame*)recBuf;
     FrameAck fa;
+    printf("-->SendStartFrameAck\n");
     int fileTotalLen = 0;
     memcpy(fa.head,sf->head,4);
     fa.ver = sf->ver;
@@ -173,7 +174,10 @@ int SendStartFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs)
     //create file
     int fd = OpenFile(sf->fileName,O_CREAT | O_RDWR);
     if(-1 == fd) perror("SendStartFrameAck openfile error!");
-    char *fileMap = MmapFile2Memory(fd,fileTotalLen);
+    char wbuf[sf->fileTotalLen];
+    memset(wbuf,0,sf->fileTotalLen);
+    WriteFile(fd,0,wbuf,sf->fileTotalLen);
+    char *fileMap = MmapFile2Memory(fd,fileTotalLen,PROT_READ | PROT_WRITE);
     if((char*)-1 == fileMap)
     {
         fa.exeStatus = 0;
@@ -196,6 +200,9 @@ int SendStartFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs)
 int SendEndFrame(int sockfd)
 {
     EndFrame ef;
+
+    printf("-->SendEndFrame\n");
+
     for(int i=0;i<sizeof(ef.head);i++) ef.head[i] = 0xFE;
     ef.ver = PRO_VER;
     ef.format = FORMAT_HEX;
@@ -215,6 +222,9 @@ int SendEndFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs)
     EndFrame *ef = (EndFrame*)recBuf;
     FrameAck fa;
     int fileTotalLen = 0;
+
+    printf("-->SendEndFrameAck\n");
+
     memcpy(fa.head,ef->head,4);
     fa.ver = ef->ver;
     fa.format = ef->format;
@@ -241,6 +251,9 @@ int SendData(int sockfd,TranFileStruct *tfs)
 {
     //tfs->fileMap
     TranPro tp;
+
+    printf("-->SendData\n");
+
     for(int i=0;i<sizeof(tp.head);i++) tp.head[i] = 0xFE;
     tp.ver = PRO_VER;
     tp.format = FORMAT_HEX;
@@ -274,6 +287,9 @@ int SendDataFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs)
     TranPro *ef = (TranPro*)recBuf;
     FrameAck fa;
     int fileTotalLen = 0;
+
+    printf("-->SendDataFrameAck\n");
+
     memcpy(fa.head,ef->head,4);
     fa.ver = ef->ver;
     fa.format = ef->format;
@@ -289,6 +305,7 @@ int SendDataFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs)
 //1 success,0 false
 int FrameAckParsing(int sockfd)
 {
+    printf("-->FrameAckParsing\n");
     char recBuf[10240];
     int recLen = recv(sockfd,recBuf,sizeof(recBuf),0);
     if(recLen<=0) perror("FrameAckParsing\n");
