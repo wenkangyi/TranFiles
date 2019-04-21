@@ -71,18 +71,26 @@ int main(int argn,void **argv){
 	time_t start_time = GetTime();
 	
 	SendStartFrame(clientSockfd,&tfs);
-	while(( (exeStatus = FrameAckParsing(clientSockfd)) == 0) && (tfs.currPoint < tfs.endPoint)){
+	exeStatus = FrameAckParsing(clientSockfd);
+	printf("exeStatus=%d\n",exeStatus);
+	printf("currPoint=%d\t,endPoint=%d\n",tfs.currPoint,tfs.endPoint);
+	while(( exeStatus == 1) && (tfs.currPoint < tfs.endPoint)){
 		SendData(clientSockfd,&tfs);
+		exeStatus = FrameAckParsing(clientSockfd);
 	}
+	
 	if(1 == exeStatus){
 		SendEndFrame(clientSockfd);
 		exeStatus = FrameAckParsing(clientSockfd);
 	}
 
+	Munmap2Memory(tfs.fileMap,tfs.fileTotalLen);
+	CloseFile(tfs.fd);
+
 	close(clientSockfd);
 	if(0 == exeStatus) perror("exeStatus = 0");
 	time_t end_time = GetTime();
 	CalcTime(start_time,end_time);
-	
+	printf("Client End!");
 	return 0;
 }

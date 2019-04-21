@@ -34,14 +34,20 @@ int SocketAccept(int serverSockfd)
 }
 
 
-char* FilesInit(size_t fileLen)
+// char* FilesInit(size_t fileLen)
+// {
+// 	//1 初始化文件
+// 	char *pFile = (char *)malloc(fileLen);
+// 	return pFile;
+// }
+
+void CalcStructLen()
 {
-	//1 初始化文件
-	char *pFile = (char *)malloc(fileLen);
-	return pFile;
+	printf("StartFrame size-->:%ld\n",sizeof(StartFrame));
+	printf("FrameAck size-->:%ld\n",sizeof(FrameAck));
+	printf("TranPro size-->:%ld\n",sizeof(TranPro));
+	printf("EndFrame size-->:%ld\n",sizeof(EndFrame));
 }
-
-
 
 int main(int argn,void **argv){
 	int serverSockfd = 0;
@@ -49,7 +55,7 @@ int main(int argn,void **argv){
 	char recBuf[10240];
 	TranFileStruct tfs={0,NULL,"",0,0,0,0,0,FILE_NAME_MAX_LEN};
 	time_t start_time = GetTime();
-	
+	//CalcStructLen();
 	serverSockfd = SocketInit();
 	clientSockfd = SocketAccept(serverSockfd);
 	memset(recBuf,0,10240);
@@ -57,10 +63,9 @@ int main(int argn,void **argv){
 		int n = read(clientSockfd,recBuf,10240);
 		if(0 >= n){
 			close(clientSockfd);
+			printf("Client close!\n");
 			break;
 		}
-
-		printf("rec data --> %s\n",recBuf);
 		
 		switch (recBuf[6])
 		{
@@ -75,7 +80,6 @@ int main(int argn,void **argv){
 			}break;
 
 			default:
-				send(clientSockfd,"he,client!\n",sizeof("he,client!\n"),0);
 				break;
 		}
 		memset(recBuf,0,10240);
@@ -84,5 +88,8 @@ int main(int argn,void **argv){
 
 	time_t end_time = GetTime();
 	CalcTime(start_time,end_time);
+
+	printf("Server End!");
+
 	return 0;
 }

@@ -10,6 +10,7 @@ int fileLen = 0;
 unsigned int CalcCRCValue(char *pbuf,int len)
 {
     unsigned int crcValue = 0;
+    printf("-->CalcCRCValue\n");
     for(int i=0;i<len;i++) crcValue += pbuf[i];
     return crcValue;
 }
@@ -34,6 +35,7 @@ int ClearFilePath()
 int OpenFile(const char *fPath,int flag)
 {
     int fd = -1;
+    printf("-->OpenFile\n");
     fd = open(fPath,flag);
     if(-1 == fd)
     {
@@ -45,6 +47,7 @@ int OpenFile(const char *fPath,int flag)
 int GetFileSize(int fd)
 {
     struct stat statbuf;
+    printf("-->GetFileSize\n");
     if(-1 == fstat(fd,&statbuf))
     {
         perror("GetFileSize function fstat false!");
@@ -59,6 +62,7 @@ int GetFileSize(int fd)
 //On success,return memory address;false return -1
 char* MmapFile2Memory(int fd,int fileLen,int flag)
 {
+    printf("-->MmapFile2Memory\n");
     return (char *)mmap(0, fileLen, flag, MAP_SHARED,fd, 0);
 }
 
@@ -68,12 +72,14 @@ char* MmapFile2Memory(int fd,int fileLen,int flag)
 //return:On success,return 0;false return -1
 int Munmap2Memory(char *fpStartAddr,int fileLen)
 {
+    printf("-->Munmap2Memory\n");
     return munmap(fpStartAddr,fileLen);
 }
 
 //false --> 0; true --> 1
 int CloseFile(int fd)
 {
+    printf("-->CloseFile\n");
     if(0 != close(fd))
     {
         perror("close file error!");
@@ -89,6 +95,7 @@ int CloseFile(int fd)
 int ReadFile(int fd,int offset,char *rBuf,int rLen)
 {
     int rByteSize = -1;
+    printf("-->ReadFile\n");
     if(fd < 0)
     {
         return 0;
@@ -114,6 +121,7 @@ int ReadFile(int fd,int offset,char *rBuf,int rLen)
 int WriteFile(int fd,int offset,char *wBuf,int wLen)
 {
     int wByteSize = -1;
+    printf("-->WriteFile\n");
     if(fd < 0)
     {
         return 0;
@@ -268,10 +276,10 @@ int SendData(int sockfd,TranFileStruct *tfs)
     else{
         tp.bufLen = tfs->maxTranSize;
     }
-    tfs->currPoint += tp.bufLen;
-
+    
     memset(tp.buf,0,MAX_TRAN_DATA_SIZE);
     memcpy(tp.buf,&tfs->fileMap[tfs->currPoint], tp.bufLen);
+    tfs->currPoint += tp.bufLen;
 
     for(int i=0;i<sizeof(tp.tail);i++) tp.tail[i] = 0xEF;
 
@@ -295,7 +303,7 @@ int SendDataFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs)
     fa.format = ef->format;
     fa.cmd = ef->cmd;
     memcpy(fa.tail,ef->tail,4);
-    
+    printf("recv file data-->%s\n",ef->buf);
     memcpy(&tfs->fileMap[tfs->currPoint],ef->buf,ef->bufLen);
     
     int ret = send(sockfd,(char*)&fa,sizeof(fa),0);
