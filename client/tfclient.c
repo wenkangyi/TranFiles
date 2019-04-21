@@ -2,6 +2,13 @@
 #include "../sharesource/protocol.h" //在这里已经指定了路径
 #include <inttypes.h>
 
+typedef enum{
+	START_STUTES = 0,
+	SEND_DATA_STUTES,
+	END_STUTES,
+}EnumExeStatus;
+
+
 //return:On success,return sockfd;false return -1
 int Connection(char *ip)
 {
@@ -46,15 +53,25 @@ void FileInit(TranFileStruct *tfs,char *fileName){
 	tfs->fileCRCValue = CalcCRCValue(tfs->fileMap,tfs->fileTotalLen);
 }
 
+void CalcStructLen()
+{
+	printf("StartFrame size-->:%ld\n",sizeof(StartFrame));
+	printf("FrameAck size-->:%ld\n",sizeof(FrameAck));
+	printf("TranPro size-->:%ld\n",sizeof(TranPro));
+	printf("EndFrame size-->:%ld\n",sizeof(EndFrame));
+}
+
 //----------  Socket Control End ---------------
 
 int main(int argn,void **argv){
 	
 	char recbuf[10240];
 	int recLen = 0;
-	TranFileStruct tfs={0,NULL,"",0,0,0,0,0,FILE_NAME_MAX_LEN};
+	TranFileStruct tfs={0,NULL,"",0,0,0,0,0,MAX_TRAN_DATA_SIZE};
 	int exeStatus = 0;
+	EnumExeStatus ees = START_STUTES;
 
+	CalcStructLen();
 	if(argn < 3)
 	{
 		printf("input:./appname serverIP filename\n");
@@ -63,34 +80,45 @@ int main(int argn,void **argv){
 	int clientSockfd = Connection(argv[1]);
 	
 	FileInit(&tfs,argv[2]);
-
-	//send(clientSockfd,"hello,server!",sizeof("hello,server!"),0);
-	//recLen = recv(clientSockfd,recbuf,sizeof(recbuf),0);
-	printf("recv data -->:%s\n",recbuf);
-	
 	time_t start_time = GetTime();
-	
-	SendStartFrame(clientSockfd,&tfs);
-	exeStatus = FrameAckParsing(clientSockfd);
-	printf("exeStatus=%d\n",exeStatus);
-	printf("currPoint=%d\t,endPoint=%d\n",tfs.currPoint,tfs.endPoint);
-	while(( exeStatus == 1) && (tfs.currPoint < tfs.endPoint)){
-		SendData(clientSockfd,&tfs);
-		exeStatus = FrameAckParsing(clientSockfd);
+	while(1){
+		switch (ees)
+		{
+			case START_STUTES:{
+				SendStartFrame(clientSockfd,&tfs);
+				exeStatus = FrameAckParsing(clientSockfd);
+				printf("exeStatus=%d\n",exeStatus);
+				printf("currPoint=%d\t,endPoint=%d\n",tfs.currPoint,tfs.endPoint);
+				ees = SEND_DATA_STUTES;
+			}break;
+			case SEND_DATA_STUTES:{
+				while(( exeStatus == 1) && (tfs.currPoint < tfs.endPoint)){
+					SendData(clientSockfd,&tfs);
+					exeStatus = FrameAckParsing(clientSockfd);
+					printf("exeStatus=%d\n",exeStatus);
+					printf("currPoint=%d\t,endPoint=%d\n",tfs.currPoint,tfs.endPoint);
+				}
+				ees = END_STUTES;
+			}break;
+			case END_STUTES:{
+				if(1 == exeStatus){
+					SendEndFrame(clientSockfd);
+					exeStatus = FrameAckParsing(clientSockfd);
+				}
+
+				Munmap2Memory(tfs.fileMap,tfs.fileTotalLen);
+				CloseFile(tfs.fd);
+
+				close(clientSockfd);
+				if(0 == exeStatus) perror("exeStatus = 0");
+				time_t end_time = GetTime();
+				CalcTime(start_time,end_time);
+				printf("Client End!\n");
+				return 0;
+			}break;
+			default:
+				break;
+		}	
 	}
 	
-	if(1 == exeStatus){
-		SendEndFrame(clientSockfd);
-		exeStatus = FrameAckParsing(clientSockfd);
-	}
-
-	Munmap2Memory(tfs.fileMap,tfs.fileTotalLen);
-	CloseFile(tfs.fd);
-
-	close(clientSockfd);
-	if(0 == exeStatus) perror("exeStatus = 0");
-	time_t end_time = GetTime();
-	CalcTime(start_time,end_time);
-	printf("Client End!");
-	return 0;
 }

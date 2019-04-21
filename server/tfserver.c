@@ -53,9 +53,9 @@ int main(int argn,void **argv){
 	int serverSockfd = 0;
 	int clientSockfd = 0;
 	char recBuf[10240];
-	TranFileStruct tfs={0,NULL,"",0,0,0,0,0,FILE_NAME_MAX_LEN};
+	TranFileStruct tfs={0,NULL,"",0,0,0,0,0,MAX_TRAN_DATA_SIZE};
 	time_t start_time = GetTime();
-	//CalcStructLen();
+	CalcStructLen();
 	serverSockfd = SocketInit();
 	clientSockfd = SocketAccept(serverSockfd);
 	memset(recBuf,0,10240);
@@ -89,7 +89,7 @@ int main(int argn,void **argv){
 	time_t end_time = GetTime();
 	CalcTime(start_time,end_time);
 
-	printf("Server End!");
+	printf("Server End!\n");
 
 	return 0;
 }

@@ -229,7 +229,7 @@ int SendEndFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs)
 {
     EndFrame *ef = (EndFrame*)recBuf;
     FrameAck fa;
-    int fileTotalLen = 0;
+    //int fileTotalLen = 0;
 
     printf("-->SendEndFrameAck\n");
 
@@ -238,7 +238,7 @@ int SendEndFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs)
     fa.format = ef->format;
     fa.cmd = ef->cmd;
     memcpy(fa.tail,ef->tail,4);
-    
+    printf("tfs->fileTotalLen-->%d\n",tfs->fileTotalLen);
     unsigned int crcValue = CalcCRCValue(tfs->fileMap,tfs->fileTotalLen);
     if(crcValue == tfs->fileCRCValue){
         fa.exeStatus = 1;
@@ -305,7 +305,9 @@ int SendDataFrameAck(int sockfd,char *recBuf,TranFileStruct *tfs)
     memcpy(fa.tail,ef->tail,4);
     printf("recv file data-->%s\n",ef->buf);
     memcpy(&tfs->fileMap[tfs->currPoint],ef->buf,ef->bufLen);
-    
+    tfs->currPoint += ef->bufLen;
+    fa.exeStatus = 1;
+
     int ret = send(sockfd,(char*)&fa,sizeof(fa),0);
     return ret;
 }
